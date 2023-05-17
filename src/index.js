@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs').promises;
 const { join } = require('path');
+const crypto = require('crypto');
 
 const app = express();
 app.use(express.json());
@@ -44,6 +45,19 @@ app.get('/talker/:id', async (req, res) => {
       return res.status(404).send({ message: 'Pessoa palestrante não encontrada' });
     }
     return res.status(HTTP_OK_STATUS).json(talker);
+});
+
+// requisito 3 A const crypto e a função generetaRandomToken foram retiradas do exercicio do DIA 4 do course
+
+const generateRandomToken = () => crypto.randomBytes(8).toString('hex');
+
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+  if (email && password) {
+    const token = generateRandomToken();
+    return res.json({ token });
+  }
+  res.status(400).json({ error: 'Email e senha são obrigatórios' });
 });
 
 app.listen(PORT, () => {
