@@ -108,13 +108,38 @@ const nameIsValid = (req, res, next) => {
     return res.status(400).json({ message: 'O campo "name" é obrigatório' });
   }
   if (name.length < 3) {
-    return res.status(400).json({
-      message: 'O "name" deve ter pelo menos 3 caracteres' });
+    return res.status(400).json({ message: 'O "name" deve ter pelo menos 3 caracteres' });
   }
   next();
 }; 
 
-app.post('/talker', authorizationIsValid, nameIsValid, async (req, res) => {
+// Middleware de idade
+const ageIsValid = (req, res, next) => {
+  const { age } = req.body;
+  if (!age) {
+    return res.status(400).json({ message: 'O campo "age" é obrigatório' });
+  }
+  if (+(age) < 18 || !Number.isInteger(age)) {
+    return res.status(400)
+    .json({ message: 'O campo "age" deve ser um número inteiro igual ou maior que 18' });
+  }
+  next();
+};
+
+// Middleware talk
+const talkIsValid = (req, res, next) => {
+  const { talk } = req.body;
+  if (!talk) {
+    return res.status(400).json({ message: 'O campo "talk" é obrigatório' });
+  } 
+  next();
+};
+
+app.post('/talker', 
+authorizationIsValid, nameIsValid, 
+ageIsValid, talkIsValid, 
+
+async (req, res) => {
   const { name, age, talk } = req.body;
   const talkers = await readFile();
   const newTalker = {
