@@ -88,6 +88,45 @@ app.post('/login', emailIsValid, passwordIsValid, (req, res) => {
   res.status(400).json({ error: 'Email e senha são obrigatórios' });
 });
 
+// requisito 5
+// Middleware de autorização
+const authorizationIsValid = (req, res, next) => {
+  const { authorization } = req.headers;
+  if (!authorization) {
+    return res.status(401).json({ message: 'Token não encontrado' });
+  }
+  if (typeof authorization !== 'string' || authorization.length !== 16) {
+    return res.status(401).json({ message: 'Token inválido' });
+  }
+  next();
+}; 
+
+// Middleware de name
+const nameIsValid = (req, res, next) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ message: 'O campo "name" é obrigatório' });
+  }
+  if (name.length < 3) {
+    return res.status(400).json({
+      message: 'O "name" deve ter pelo menos 3 caracteres' });
+  }
+  next();
+}; 
+
+app.post('/talker', authorizationIsValid, nameIsValid, async (req, res) => {
+  const { name, age, talk } = req.body;
+  const talkers = await readFile();
+  const newTalker = {
+    id: talkers.length + 1,
+    name,
+    age,
+    talk,
+  };
+  talkers.push(newTalker);
+  res.status(201).json(newTalker);
+});
+
 app.listen(PORT, () => {
   console.log('Online');
 });
