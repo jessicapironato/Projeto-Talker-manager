@@ -48,10 +48,38 @@ app.get('/talker/:id', async (req, res) => {
 });
 
 // requisito 3 A const crypto e a função generetaRandomToken foram retiradas do exercicio do DIA 4 do course
+// requisito 4 feito 2 middlewares para validação e encadeados no post
+
+const emailIsValid = (req, res, next) => {
+  const regex = /\S+@\S+\.\S+/;
+  const { email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ message: 'O campo "email" é obrigatório' });
+  }
+  if (!regex.test(email)) {
+    return res.status(400).json({ message: 'O "email" deve ter o formato "email@email.com"' });
+  }
+  
+  next();
+};
+
+const passwordIsValid = (req, res, next) => {
+  const { password } = req.body;
+  
+  if (!password) {
+    return res.status(400).json({ message: 'O campo "password" é obrigatório' });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ message: 'O "password" deve ter pelo menos 6 caracteres' });
+  }
+
+  next();
+};
 
 const generateRandomToken = () => crypto.randomBytes(8).toString('hex');
 
-app.post('/login', (req, res) => {
+app.post('/login', emailIsValid, passwordIsValid, (req, res) => {
   const { email, password } = req.body;
   if (email && password) {
     const token = generateRandomToken();
