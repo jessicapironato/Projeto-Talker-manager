@@ -135,9 +135,41 @@ const talkIsValid = (req, res, next) => {
   next();
 };
 
+// Middleware watched
+const watchedAtIsValid = (req, res, next) => {
+  const { talk } = req.body;
+  const dateRegex = /^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+
+  if (!talk.watchedAt) {
+    return res.status(400).json({ message: 'O campo "watchedAt" é obrigatório' });
+  } 
+  if (!dateRegex.test(talk.watchedAt)) {
+    return res.status(400).json({
+      message: 'O campo "watchedAt" deve ter o formato "dd/mm/aaaa"',
+    });
+  }
+  next();
+};
+
+// middleware rate
+const rateIsValid = (req, res, next) => {
+  const { talk } = req.body;
+  if (talk.rate === undefined) {
+    return res.status(400).json({ message: 'O campo "rate" é obrigatório' });
+  } 
+  if (talk.rate <= 0 || talk.rate > 5 || !Number.isInteger(talk.rate)) {
+    return res.status(400).json({
+      message: 'O campo "rate" deve ser um número inteiro entre 1 e 5',
+    });
+  }
+  next();
+};
+
 app.post('/talker', 
 authorizationIsValid, nameIsValid, 
 ageIsValid, talkIsValid, 
+watchedAtIsValid,
+rateIsValid,
 
 async (req, res) => {
   const { name, age, talk } = req.body;
