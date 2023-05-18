@@ -180,8 +180,12 @@ async (req, res) => {
     age,
     talk,
   };
-  talkers.push(newTalker);
-  res.status(201).json(newTalker);
+  
+  const newTalkerIsValid = () => {
+    fs.writeFile('./src/talker.json', JSON.stringify([...talkers, newTalker]), 'utf-8');
+  };
+  newTalkerIsValid();
+  return res.status(201).json(newTalker);
 });
 
 app.listen(PORT, () => {
