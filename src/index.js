@@ -209,6 +209,18 @@ app.put('/talker/:id',
     return res.status(HTTP_OK_STATUS).json(talker);
 });
 
+// requisito 7
+
+app.delete('/talker/:id', 
+  authorizationIsValid,
+  async (req, res) => {
+    const talkers = await readFile();
+    const talkersFiltered = talkers.filter(({ id }) => id !== Number(req.params.id));
+   
+    fs.writeFile('./src/talker.json', JSON.stringify(talkersFiltered), 'utf-8');
+    return res.status(204).end();
+  });
+
 app.listen(PORT, () => {
   console.log('Online');
 });
