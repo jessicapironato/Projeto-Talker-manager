@@ -2,6 +2,14 @@ const express = require('express');
 const fs = require('fs').promises;
 const { join } = require('path');
 const crypto = require('crypto');
+const { authorizationIsValid } = require('./middlewares/authorizationMiddleware');
+const { nameIsValid } = require('./middlewares/nameMiddleware');
+const { ageIsValid } = require('./middlewares/ageMiddleware');
+const { rateIsValid } = require('./middlewares/rateMiddleware');
+const { talkIsValid } = require('./middlewares/talkMiddleware');
+const { watchedAtIsValid } = require('./middlewares/watchedMiddleware');
+const { emailIsValid } = require('./middlewares/emailMiddleware');
+const { passwordIsValid } = require('./middlewares/passwordMiddleware');
 
 const app = express();
 app.use(express.json());
@@ -34,6 +42,24 @@ app.get('/talker', async (req, res) => {
     return res.status(HTTP_OK_STATUS).json(talkers);
 });
 
+// requisito 8 >> só funciona se estiver no topo!
+
+app.get('/talker/search',
+  authorizationIsValid,
+  async (req, res) => {
+  const { q } = req.query;
+  const talkers = await readFile();
+
+  const filteredTalkers = q ? talkers.reduce((acc, obj) => {
+    if (obj.name.includes(q)) {
+      acc.push(obj);
+    }
+    return acc;
+  }, []) : talkers;
+
+  res.status(200).json(filteredTalkers);
+});
+
 // requisito 2
 
 app.get('/talker/:id', async (req, res) => {
@@ -49,33 +75,6 @@ app.get('/talker/:id', async (req, res) => {
 // requisito 3 A const crypto e a função generetaRandomToken foram retiradas do exercicio do DIA 4 do course
 // requisito 4 feito 2 middlewares para validação e encadeados no post
 
-const emailIsValid = (req, res, next) => {
-  const regex = /\S+@\S+\.\S+/;
-  const { email } = req.body;
-  
-  if (!email) {
-    return res.status(400).json({ message: 'O campo "email" é obrigatório' });
-  }
-  if (!regex.test(email)) {
-    return res.status(400).json({ message: 'O "email" deve ter o formato "email@email.com"' });
-  }
-  
-  next();
-};
-
-const passwordIsValid = (req, res, next) => {
-  const { password } = req.body;
-  
-  if (!password) {
-    return res.status(400).json({ message: 'O campo "password" é obrigatório' });
-  }
-  if (password.length < 6) {
-    return res.status(400).json({ message: 'O "password" deve ter pelo menos 6 caracteres' });
-  }
-
-  next();
-};
-
 const generateRandomToken = () => crypto.randomBytes(8).toString('hex');
 
 app.post('/login', emailIsValid, passwordIsValid, (req, res) => {
@@ -86,83 +85,6 @@ app.post('/login', emailIsValid, passwordIsValid, (req, res) => {
   }
   res.status(400).json({ error: 'Email e senha são obrigatórios' });
 });
-
-// requisito 5
-// Middleware de autorização
-const authorizationIsValid = (req, res, next) => {
-  const { authorization } = req.headers;
-  if (!authorization) {
-    return res.status(401).json({ message: 'Token não encontrado' });
-  }
-  if (typeof authorization !== 'string' || authorization.length !== 16) {
-    return res.status(401).json({ message: 'Token inválido' });
-  }
-  next();
-}; 
-
-// Middleware de name
-const nameIsValid = (req, res, next) => {
-  const { name } = req.body;
-  if (!name) {
-    return res.status(400).json({ message: 'O campo "name" é obrigatório' });
-  }
-  if (name.length < 3) {
-    return res.status(400).json({ message: 'O "name" deve ter pelo menos 3 caracteres' });
-  }
-  next();
-}; 
-
-// Middleware de idade
-const ageIsValid = (req, res, next) => {
-  const { age } = req.body;
-  if (!age) {
-    return res.status(400).json({ message: 'O campo "age" é obrigatório' });
-  }
-  if (+(age) < 18 || !Number.isInteger(age)) {
-    return res.status(400)
-    .json({ message: 'O campo "age" deve ser um número inteiro igual ou maior que 18' });
-  }
-  next();
-};
-
-// Middleware talk
-const talkIsValid = (req, res, next) => {
-  const { talk } = req.body;
-  if (!talk) {
-    return res.status(400).json({ message: 'O campo "talk" é obrigatório' });
-  } 
-  next();
-};
-
-// Middleware watched
-const watchedAtIsValid = (req, res, next) => {
-  const { talk } = req.body;
-  const dateRegex = /^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
-
-  if (!talk.watchedAt) {
-    return res.status(400).json({ message: 'O campo "watchedAt" é obrigatório' });
-  } 
-  if (!dateRegex.test(talk.watchedAt)) {
-    return res.status(400).json({
-      message: 'O campo "watchedAt" deve ter o formato "dd/mm/aaaa"',
-    });
-  }
-  next();
-};
-
-// middleware rate
-const rateIsValid = (req, res, next) => {
-  const { talk } = req.body;
-  if (talk.rate === undefined) {
-    return res.status(400).json({ message: 'O campo "rate" é obrigatório' });
-  } 
-  if (talk.rate <= 0 || talk.rate > 5 || !Number.isInteger(talk.rate)) {
-    return res.status(400).json({
-      message: 'O campo "rate" deve ser um número inteiro entre 1 e 5',
-    });
-  }
-  next();
-};
 
 app.post('/talker', 
   authorizationIsValid,
@@ -221,6 +143,8 @@ app.delete('/talker/:id',
     return res.status(204).end();
   });
 
+  // requisito 8
+ 
 app.listen(PORT, () => {
   console.log('Online');
 });
