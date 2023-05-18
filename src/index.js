@@ -20,7 +20,6 @@ const talkerPath = './talker.json';
 const readFile = async () => {
   try {
     const data = await fs.readFile(join(__dirname, talkerPath), 'utf-8');
-    console.log(data);
     return JSON.parse(data);
   } catch (error) {
     console.log(`Arquivo apresenta erro ${error}`);
@@ -166,26 +165,48 @@ const rateIsValid = (req, res, next) => {
 };
 
 app.post('/talker', 
-authorizationIsValid, nameIsValid, 
-ageIsValid, talkIsValid, 
-watchedAtIsValid,
-rateIsValid,
+  authorizationIsValid,
+  nameIsValid, 
+  ageIsValid,
+  talkIsValid, 
+  watchedAtIsValid,
+  rateIsValid,
+  async (req, res) => {
+    const { name, age, talk } = req.body;
+    const talkers = await readFile();
+    const newTalker = {
+      id: talkers.length + 1,
+      name,
+      age,
+      talk,
+    };
+    fs.writeFile('./src/talker.json', JSON.stringify([...talkers, newTalker]), 'utf-8');  
+    return res.status(201).json(newTalker);
+  });
 
-async (req, res) => {
-  const { name, age, talk } = req.body;
-  const talkers = await readFile();
-  const newTalker = {
-    id: talkers.length + 1,
-    name,
-    age,
-    talk,
-  };
-  
-  const newTalkerIsValid = () => {
-    fs.writeFile('./src/talker.json', JSON.stringify([...talkers, newTalker]), 'utf-8');
-  };
-  newTalkerIsValid();
-  return res.status(201).json(newTalker);
+// requisito 6
+
+app.put('/talker/:id', 
+  authorizationIsValid,
+  nameIsValid, 
+  ageIsValid,
+  talkIsValid, 
+  watchedAtIsValid,
+  rateIsValid,
+  async (req, res) => {
+    const { name, age, talk } = req.body;
+    const talkers = await readFile();
+    const talker = talkers.find(({ id }) => id === Number(req.params.id));
+
+    if (!talker) {
+      return res.status(404).send({ message: 'Pessoa palestrante não encontrada' });
+    }   
+    talker.name = name;
+    talker.age = age;
+    talker.talk = talk;
+ 
+    fs.writeFile('./src/talker.json', JSON.stringify([...talkers, talker]), 'utf-8');
+    return res.status(HTTP_OK_STATUS).json(talker);
 });
 
 app.listen(PORT, () => {
